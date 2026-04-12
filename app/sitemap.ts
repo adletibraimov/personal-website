@@ -1,27 +1,29 @@
 import { MetadataRoute } from 'next'
- 
+
+const siteUrl = 'https://adletibraimov.cv'
+
 export default function sitemap(): MetadataRoute.Sitemap {
   return [
     {
-      url: 'https://adletibraimov.cv',
+      url: siteUrl,
       lastModified: new Date(),
       changeFrequency: 'yearly',
       priority: 1,
     },
     {
-      url: 'https://adletibraimov.cv/cv',
+      url: `${siteUrl}/cv`,
       lastModified: new Date(),
       changeFrequency: 'monthly',
       priority: 0.8,
     },
     {
-      url: 'https://adletibraimov.cv/projects',
+      url: `${siteUrl}/projects`,
       lastModified: new Date(),
       changeFrequency: 'weekly',
       priority: 0.7,
     },
     {
-      url: 'https://adletibraimov.cv/contacts',
+      url: `${siteUrl}/contacts`,
       lastModified: new Date(),
       changeFrequency: 'weekly',
       priority: 0.9,

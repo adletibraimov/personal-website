@@ -8,6 +8,22 @@ import Button from '../../../components/Button';
 import ChatIcon from '@mui/icons-material/Chat';
 import LocalPhoneIcon from '@mui/icons-material/LocalPhone';
 import { getContacts } from '@/sanity/sanity-utils';
+import { Metadata } from 'next';
+import { Suspense } from 'react';
+
+const siteUrl = 'https://adletibraimov.cv';
+
+export const metadata: Metadata = {
+  title: 'Contacts | Adlet Ibraimov',
+  description:
+    'Get in touch with Adlet Ibraimov - Frontend & Shopify Developer based in Milan, Italy. Available for freelance projects and collaborations.',
+  keywords: ['contact adlet ibraimov', 'frontend developer contact', 'shopify developer milan', 'web developer contact'],
+  openGraph: {
+    title: 'Contacts | Adlet Ibraimov',
+    description: 'Get in touch with Adlet Ibraimov - Frontend & Shopify Developer based in Milan, Italy.',
+    url: `${siteUrl}/contacts`,
+  },
+};
 
 type IconMapper = {
   [key: string]: React.ElementType;
@@ -22,7 +38,7 @@ const iconMapper: IconMapper = {
   phone: LocalPhoneIcon,
 };
 
-export default async function Contacts() {
+async function ContactsContent() {
   const data = await getContacts();
 
   if (!data) return <div>No contacts founded</div>;
@@ -40,12 +56,20 @@ export default async function Contacts() {
         return (
           <Button
             key={key}
-            icon={IconComponent} // Render the icon component directly
-            text={item.name} // Assuming 'name' corresponds to the text to be displayed
-            value={item.link} // Assuming 'link' corresponds to the value of the button
+            icon={IconComponent}
+            text={item.name}
+            value={item.link}
           />
         );
       })}
     </div>
+  );
+}
+
+export default function Contacts() {
+  return (
+    <Suspense fallback={<div className='px-3 py-24'>Loading contacts...</div>}>
+      <ContactsContent />
+    </Suspense>
   );
 }

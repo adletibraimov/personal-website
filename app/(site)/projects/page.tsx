@@ -2,8 +2,24 @@ import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { getProjects } from '@/sanity/sanity-utils';
+import { Metadata } from 'next';
+import { Suspense } from 'react';
 
-export default async function Projects() {
+const siteUrl = 'https://adletibraimov.cv';
+
+export const metadata: Metadata = {
+  title: 'Projects | Adlet Ibraimov',
+  description:
+    'Explore Adlet Ibraimov portfolio - Frontend & Shopify Developer. Projects include e-commerce sites for brands like Chiara Ferragni, Off-White, Moschino, and Maserati.',
+  keywords: ['adlet ibraimov projects', 'frontend developer portfolio', 'shopify developer projects', 'web developer portfolio', 'ecommerce projects'],
+  openGraph: {
+    title: 'Projects | Adlet Ibraimov',
+    description: 'Explore Adlet Ibraimov portfolio - Frontend & Shopify Developer with e-commerce experience.',
+    url: `${siteUrl}/projects`,
+  },
+};
+
+async function ProjectsContent() {
   const data = await getProjects();
 
   if (!data)
@@ -28,7 +44,7 @@ export default async function Projects() {
                 src={item?.image?.asset?.url}
                 placeholder='blur'
                 blurDataURL={item?.image?.asset?.metadata?.lqip}
-                alt={item?.image?.alt}
+                alt={item?.image?.alt || `${item?.name} project screenshot`}
                 fill={true}
               />
             </div>
@@ -37,5 +53,13 @@ export default async function Projects() {
         ))}
       </div>
     </div>
+  );
+}
+
+export default function Projects() {
+  return (
+    <Suspense fallback={<div className='px-3 py-24'>Loading projects...</div>}>
+      <ProjectsContent />
+    </Suspense>
   );
 }

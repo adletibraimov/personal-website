@@ -1,8 +1,23 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import Image from 'next/image';
 import { getAbout } from '@/sanity/sanity-utils';
 import { PortableText } from '@portabletext/react';
 import { urlForImage } from '@/sanity/lib/image';
+import { Metadata } from 'next';
+
+const siteUrl = 'https://adletibraimov.cv';
+
+export const metadata: Metadata = {
+  title: 'Home | Adlet Ibraimov',
+  description:
+    'Adlet Ibraimov - Frontend, Shopify and Web Developer based in Milan, Italy. Specializing in React, Next.js, Tailwind CSS, and Node.js with e-commerce experience.',
+  keywords: ['adlet ibraimov', 'frontend developer', 'shopify developer', 'web developer', 'react developer', 'milan developer'],
+  openGraph: {
+    title: 'Adlet Ibraimov | Frontend & Shopify Developer',
+    description: 'Frontend, Shopify and Web Developer based in Milan, Italy.',
+    url: siteUrl,
+  },
+};
 
 export default async function Home() {
   const data = await getAbout();
@@ -38,7 +53,7 @@ export default async function Home() {
         <Image
           className='object-cover'
           src={urlForImage(data.image).fit('crop').width(1500).height(1500).url()}
-          alt={data.image?.alt}
+          alt={data.image?.alt || `${data.name} - Frontend & Shopify Developer`}
           fill={true}
           loading='eager'
           placeholder='blur'

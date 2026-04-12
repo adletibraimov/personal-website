@@ -4,6 +4,21 @@ import { getCV } from '@/sanity/sanity-utils';
 import { urlForCvMobileImage } from '@/sanity/lib/image';
 import Button from '@/components/Button';
 import DownloadIcon from '@mui/icons-material/Download';
+import { Metadata } from 'next';
+
+const siteUrl = 'https://adletibraimov.cv';
+
+export const metadata: Metadata = {
+  title: 'Curriculum Vitae | Adlet Ibraimov',
+  description:
+    'Download Adlet Ibraimov CV - Frontend & Shopify Developer with experience in React, Next.js, Tailwind CSS, and Node.js. Based in Milan, Italy.',
+  keywords: ['adlet ibraimov cv', 'frontend developer resume', 'shopify developer cv', 'web developer portfolio', 'react developer milan'],
+  openGraph: {
+    title: 'Curriculum Vitae | Adlet Ibraimov',
+    description: 'Download Adlet Ibraimov CV - Frontend & Shopify Developer with experience in React, Next.js, and Shopify.',
+    url: `${siteUrl}/cv`,
+  },
+};
 
 export default async function CV() {
   const data = await getCV();

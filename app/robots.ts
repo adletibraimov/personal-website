@@ -1,11 +1,13 @@
 import { MetadataRoute } from 'next'
- 
+
+const siteUrl = 'https://adletibraimov.cv'
+
 export default function robots(): MetadataRoute.Robots {
   return {
     rules: {
       userAgent: '*',
-      allow: '/'
+      allow: '/',
     },
-    sitemap: 'https://adletibraimov.cv/sitemap.xml',
+    sitemap: `${siteUrl}/sitemap.xml`,
   }
 }
