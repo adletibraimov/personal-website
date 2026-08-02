@@ -3,12 +3,10 @@
 @tailwind utilities;
 
 :root {
-  /* --foreground-rgb: 0, 0, 0; */
-  /* --background-start-rgb: 18, 18, 18; */
-  /* --background-start-rgb: 255, 255, 255; */
-  /* --background-end-rgb: 255, 255, 255; */
-  /* --background-end-rgb: 18, 18, 18; */
-  @apply bg-back;
+  /* Boot black to match About intro; sections paint their own surfaces */
+  --background-start-rgb: 10, 10, 10;
+  --background-end-rgb: 10, 10, 10;
+  background-color: #0a0a0a;
 }
 
 /* @media (prefers-color-scheme: dark) {
@@ -20,16 +18,12 @@
 } */
 
 html {
-  scroll-behavior: smooth;
+  /* Lenis handles smooth scrolling; keep auto to avoid fighting it */
+  scroll-behavior: auto;
 }
 
 body {
-  background: linear-gradient(to bottom, transparent, rgb(var(--background-end-rgb))) rgb(var(--background-start-rgb));
-  /* background-image: url('../public/steam.gif');
-  width: 100%;
-  background-size: cover;
-  background-repeat: no-repeat;
-  background-position: center; */
+  background-color: #0a0a0a;
   @apply text-primary;
 }
 

@@ -1,16 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useLenis } from '@/components/SmoothScroll';
 import config from '../../lib/config';
 
 const SECTION_IDS = config.nav.map((item) => item.id);
-
-function scrollToSection(id: string) {
-  const el = document.getElementById(id);
-  if (!el) return;
-  el.scrollIntoView({ behavior: 'smooth' });
-  window.history.replaceState(null, '', `#${id}`);
-}
 
 /**
  * Floating header with the original projects blend stack
@@ -18,6 +12,20 @@ function scrollToSection(id: string) {
  */
 export default function Header() {
   const [activeId, setActiveId] = useState(SECTION_IDS[0]);
+  const lenis = useLenis();
+
+  function scrollToSection(id: string) {
+    const el = document.getElementById(id);
+    if (!el) return;
+
+    if (lenis) {
+      lenis.scrollTo(el, { offset: 0 });
+    } else {
+      el.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    window.history.replaceState(null, '', `#${id}`);
+  }
 
   useEffect(() => {
     let observer: IntersectionObserver | null = null;
@@ -66,7 +74,7 @@ export default function Header() {
 
   return (
     <header className='pointer-events-none fixed top-0 left-0 right-0 z-50 flex justify-center pt-4 md:pt-6 mix-blend-luminosity'>
-      <nav className='pointer-events-auto mix-blend-luminosity flex flex-row md:gap-4 items-center justify-center bg-[#faebd7] px-3 py-2 md:px-5 md:py-2.5 transition-[padding,box-shadow,transform] duration-300 ease-out hover:px-5 hover:py-3 md:hover:px-8 md:hover:py-3.5 hover:shadow-md hover:scale-[1.02]'>
+      <nav className='pointer-events-auto mix-blend-luminosity flex flex-row md:gap-4 items-center justify-center bg-[#faebd7] px-3 py-2 md:px-5 md:py-2.5 transition-[padding,box-shadow,transform] duration-300 ease-out hover:px-5 hover:py-3 md:hover:px-8 md:hover:py-3.5  hover:scale-[1.02]'>
         {config.nav.map((item) => (
           <button
             type='button'

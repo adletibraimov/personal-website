@@ -258,7 +258,7 @@ export default function ProjectsGrid({ projects }: ProjectsGridProps) {
     <section
       id='projects'
       ref={containerRef}
-      className='scroll-mt-24 px-3 py-24 min-h-screen'
+      className='scroll-mt-24 min-h-screen bg-back px-3 py-24'
     >
       <div className='flex flex-col'>
         <h2 className='font-bold mb-2 text-5xl md:text-7xl'>PROJECTS</h2>

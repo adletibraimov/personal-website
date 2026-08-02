@@ -3,12 +3,12 @@ import { About } from '@/types/about';
 import { client } from './lib/client';
 import { CV } from '@/types/cv';
 import { Project } from '@/types/project';
-import { Contact, Contacts } from '@/types/contact';
+import { Contact } from '@/types/contact';
 
 export async function getAbout(): Promise<About> {
   return client.fetch(
     groq`*[_type == "about"][0]{
-      name,
+      _id,
       image{
         alt,
         hotspot,
@@ -22,9 +22,13 @@ export async function getAbout(): Promise<About> {
           }
         }
       },
-      subtitle,
-      description
-    } `,
+      catchphrase,
+      beats[]{
+        _key,
+        title,
+        description
+      }
+    }`,
     {},
     { cache: 'no-store' }
   );
@@ -69,11 +73,14 @@ export async function getProjects(): Promise<Project[]> {
   );
 }
 
-export async function getContacts(): Promise<Contacts> {
+export async function getContacts(): Promise<Contact[]> {
   return client.fetch(
-    groq`*[_type=='contacts'][0]{
-      contacts
-    } `,
+    groq`*[_type=='contact']|order(orderRank){
+      _id,
+      name,
+      link,
+      socialMedia
+    }`,
     {},
     { cache: 'no-store' }
   );

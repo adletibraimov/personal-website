@@ -7,15 +7,19 @@ const config = {
   instagram: 'https://instagram.com/ivluence',
   author: 'Adlet Ibraimov',
   authorUrl: 'https://www.instagram.com/ivluence',
+  location: {
+    city: 'Milan',
+    country: 'Italy',
+  },
   nav: [
     {
       name: 'ABOUT ME',
       id: 'about',
     },
-    {
-      name: 'CV',
-      id: 'cv',
-    },
+    // {
+    //   name: 'CV',
+    //   id: 'cv',
+    // },
     {
       name: 'PROJECTS',
       id: 'projects',
