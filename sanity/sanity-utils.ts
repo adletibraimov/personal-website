@@ -50,6 +50,7 @@ export async function getCV(): Promise<CV[]> {
 export async function getProjects(): Promise<Project[]> {
   return client.fetch(
     groq`*[_type=='projects']|order(orderRank){
+      _id,
       name,
       image{
         asset->{

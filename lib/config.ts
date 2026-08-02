@@ -10,19 +10,19 @@ const config = {
   nav: [
     {
       name: 'ABOUT ME',
-      path: '/',
+      id: 'about',
     },
     {
       name: 'CV',
-      path: '/cv',
+      id: 'cv',
     },
     {
       name: 'PROJECTS',
-      path: '/projects',
+      id: 'projects',
     },
     {
       name: 'CONTACTS',
-      path: '/contacts',
+      id: 'contacts',
     },
   ],
 };

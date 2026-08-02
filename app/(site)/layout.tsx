@@ -149,7 +149,7 @@ export default async function RootLayout({
       <body
         className={clsx(
           outfit.className,
-          'm-auto flex flex-col justify-between flex-grow h-screen'
+          'm-auto flex flex-col justify-between flex-grow min-h-screen'
         )}
       >
         <div>

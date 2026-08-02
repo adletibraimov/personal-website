@@ -14,9 +14,11 @@ const REEL_LENGTH = 8;
 
 // Lean while scrolling (deg). Top viewport: \  | |  /   bottom: /  | |  \
 // Middle viewport stays straight. Settles flat when scroll stops.
-const MAX_LEAN = 20;
-const VELOCITY_REF = 850;
-const DEAD_ZONE = 0.25; // middle ±25% of viewport stays flat
+const MAX_LEAN = 55;
+const VELOCITY_REF = 60; // lower = reaches full lean at slower scroll
+const DEAD_ZONE = 0.12;
+const MIN_SCROLL_STRENGTH = 0.7; // always visible while scrolling
+const SETTLE_MS = 220;
 
 type ProjectsGridProps = {
   projects: Project[];
@@ -41,7 +43,7 @@ function SlotTitle({ name }: { name: string }) {
 
   return (
     <p
-      className='project-title uppercase text-center text-2xl md:text-4xl lg:text-5xl font-bold tracking-wide flex flex-wrap justify-center gap-x-[0.05em] leading-none'
+      className='project-title uppercase text-center text-xl md:text-2xl lg:text-3xl tracking-wide flex flex-wrap justify-center gap-x-[0.05em] leading-none'
       aria-label={name}
     >
       {chars.map((char, index) => {
@@ -61,7 +63,7 @@ function SlotTitle({ name }: { name: string }) {
               {reel.map((reelChar, reelIndex) => (
                 <span
                   key={reelIndex}
-                  className='block h-[1.1em] leading-[1.1em]'
+                  className='block h-[1.1em] leading-[1.1em] tracking-tight'
                 >
                   {reelChar}
                 </span>
@@ -75,7 +77,7 @@ function SlotTitle({ name }: { name: string }) {
 }
 
 export default function ProjectsGrid({ projects }: ProjectsGridProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -91,24 +93,28 @@ export default function ProjectsGrid({ projects }: ProjectsGridProps) {
       const triggers = gsap.utils.toArray<HTMLElement>('.project-trigger');
       const bendEls = gsap.utils.toArray<HTMLElement>('.project-bend');
 
-      // —— Entrance: scale + slot text ——
+      // —— Entrance: media frame scaleX 0.8→1; image counter-scales so it stays cover ——
       triggers.forEach((trigger) => {
+        const media = trigger.querySelector<HTMLElement>('.project-media');
+        const mediaImg = trigger.querySelector<HTMLElement>('.project-media-img');
         const card = trigger.querySelector<HTMLElement>('.project-card');
-        if (!card) return;
+        if (!media || !mediaImg || !card) return;
 
         const reels = card.querySelectorAll<HTMLElement>(
           '.project-title-reel:not([data-space="true"])'
         );
 
         if (prefersReducedMotion) {
-          gsap.set(card, { scaleX: 1 });
+          gsap.set([media, mediaImg], { scaleX: 1 });
           reels.forEach((reel) => {
             gsap.set(reel, { y: `-${(reel.children.length - 1) * 1.1}em` });
           });
           return;
         }
 
-        gsap.set(card, { scaleX: 0.8, transformOrigin: '50% 50%' });
+        // Frame shrinks; image scales up by 1/0.8 so pixels aren't squished
+        gsap.set(media, { scaleX: 0.8, transformOrigin: '50% 50%' });
+        gsap.set(mediaImg, { scaleX: 1.25, transformOrigin: '50% 50%' });
         gsap.set(reels, { y: 0 });
 
         const tl = gsap.timeline({
@@ -122,20 +128,26 @@ export default function ProjectsGrid({ projects }: ProjectsGridProps) {
           },
         });
 
-        tl.to(card, {
-          scaleX: 1,
-          duration: 0.85,
-          ease: 'power2.out',
-        }).to(
-          reels,
-          {
-            y: (_, el) => `-${(el.children.length - 1) * 1.1}em`,
-            duration: 0.65,
-            ease: 'power2.inOut',
-            stagger: 0.02,
-          },
-          0.08
-        );
+        tl.to(
+          media,
+          { scaleX: 1, duration: 0.85, ease: 'power2.out' },
+          0
+        )
+          .to(
+            mediaImg,
+            { scaleX: 1, duration: 0.85, ease: 'power2.out' },
+            0
+          )
+          .to(
+            reels,
+            {
+              y: (_, el) => `-${(el.children.length - 1) * 1.1}em`,
+              duration: 0.65,
+              ease: 'power2.inOut',
+              stagger: 0.02,
+            },
+            0.08
+          );
       });
 
       if (prefersReducedMotion || bendEls.length === 0) return;
@@ -151,8 +163,9 @@ export default function ProjectsGrid({ projects }: ProjectsGridProps) {
         rotationZ: 0,
       });
 
+      // Snappy follow — old 0.4s ease never reached full lean before settle
       const rotationZTo = bendEls.map((el) =>
-        gsap.quickTo(el, 'rotationZ', { duration: 0.4, ease: 'power3.out' })
+        gsap.quickTo(el, 'rotationZ', { duration: 0.12, ease: 'power2.out' })
       );
 
       const flatten = () => {
@@ -165,7 +178,8 @@ export default function ProjectsGrid({ projects }: ProjectsGridProps) {
         const abs = Math.abs(offset);
         if (abs <= DEAD_ZONE) return 0;
         const t = (abs - DEAD_ZONE) / (1 - DEAD_ZONE);
-        return Math.sign(offset) * t;
+        // Ease out so edges hit full lean sooner
+        return Math.sign(offset) * Math.pow(t, 0.65);
       };
 
       const applyBend = (strength: number) => {
@@ -198,25 +212,29 @@ export default function ProjectsGrid({ projects }: ProjectsGridProps) {
       };
 
       let lastY = window.scrollY;
+      let lastTs = performance.now();
       let settleTimer: ReturnType<typeof setTimeout> | undefined;
 
-      ScrollTrigger.create({
-        trigger: container.querySelector('.project-grid'),
-        start: 'top bottom',
-        end: 'bottom top',
-        onUpdate: (self) => {
-          const y = self.scroll();
-          const delta = Math.abs(y - lastY);
-          lastY = y;
+      const onScroll = () => {
+        const now = performance.now();
+        const dt = Math.max(now - lastTs, 1);
+        const y = window.scrollY;
+        const delta = Math.abs(y - lastY);
+        lastY = y;
+        lastTs = now;
 
-          const fromDelta = delta / 28;
-          const fromVelocity = Math.abs(self.getVelocity()) / VELOCITY_REF;
-          applyBend(Math.max(fromDelta, fromVelocity));
+        const pxPerSec = (delta / dt) * 1000;
+        const fromSpeed = pxPerSec / VELOCITY_REF;
+        // Floor strength so bend is always obvious while scrolling
+        const strength = Math.max(MIN_SCROLL_STRENGTH, fromSpeed);
+        applyBend(strength);
 
-          clearTimeout(settleTimer);
-          settleTimer = setTimeout(flatten, 120);
-        },
-      });
+        clearTimeout(settleTimer);
+        settleTimer = setTimeout(flatten, SETTLE_MS);
+      };
+
+      // Native scroll is more reliable than ST onUpdate for trackpads
+      window.addEventListener('scroll', onScroll, { passive: true });
 
       const settle = () => flatten();
       window.addEventListener('scrollend', settle, { passive: true });
@@ -224,6 +242,7 @@ export default function ProjectsGrid({ projects }: ProjectsGridProps) {
 
       settleFns.push(() => {
         clearTimeout(settleTimer);
+        window.removeEventListener('scroll', onScroll);
         window.removeEventListener('scrollend', settle);
         ScrollTrigger.removeEventListener('scrollEnd', settle);
       });
@@ -236,21 +255,25 @@ export default function ProjectsGrid({ projects }: ProjectsGridProps) {
   }, [projects]);
 
   return (
-    <div ref={containerRef} className='px-3 py-24'>
+    <section
+      id='projects'
+      ref={containerRef}
+      className='scroll-mt-24 px-3 py-24 min-h-screen'
+    >
       <div className='flex flex-col'>
-        <h1 className='font-bold mb-2'>PROJECTS</h1>
+        <h2 className='font-bold mb-2 text-5xl md:text-7xl'>PROJECTS</h2>
       </div>
 
       {/* Dedicated perspective wrapper — CSS grid alone often kills 3D */}
       <div
-        className='project-perspective'
+        className='project-perspective lg:mx-32'
         style={{
           perspective: '1100px',
           perspectiveOrigin: '50% 45%',
         }}
       >
         <div
-          className='project-grid grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-10 py-4'
+          className='project-grid grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-20 py-4'
           style={{ transformStyle: 'preserve-3d' }}
         >
           {projects.map((item, index) => (
@@ -270,17 +293,20 @@ export default function ProjectsGrid({ projects }: ProjectsGridProps) {
                     href={item.url}
                     className='flex flex-col items-center gap-5 hover:-translate-y-2 hover:text-secondary p-2 transition-transform duration-200'
                   >
-                    <div className='w-full aspect-video relative overflow-hidden'>
-                      <Image
-                        className='object-cover'
-                        src={item.image?.asset?.url}
-                        placeholder='blur'
-                        blurDataURL={item.image?.asset?.metadata?.lqip}
-                        alt={
-                          item.image?.alt || `${item.name} project screenshot`
-                        }
-                        fill
-                      />
+                    <div className='project-media w-full aspect-video relative overflow-hidden will-change-transform'>
+                      <div className='project-media-img absolute inset-0 will-change-transform'>
+                        <Image
+                          className='object-cover object-center'
+                          src={item.image?.asset?.url}
+                          placeholder='blur'
+                          blurDataURL={item.image?.asset?.metadata?.lqip}
+                          alt={
+                            item.image?.alt || `${item.name} project screenshot`
+                          }
+                          fill
+                          sizes='(max-width: 768px) 100vw, 50vw'
+                        />
+                      </div>
                     </div>
                     <SlotTitle name={item.name} />
                   </Link>
@@ -290,6 +316,6 @@ export default function ProjectsGrid({ projects }: ProjectsGridProps) {
           ))}
         </div>
       </div>
-    </div>
+    </section>
   );
 }
