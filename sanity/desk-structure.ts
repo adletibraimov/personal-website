@@ -1,11 +1,5 @@
 import { type StructureResolver } from 'sanity/structure';
-import {
-  UserIcon,
-  CaseIcon,
-  LaunchIcon,
-  RocketIcon,
-  BillIcon,
-} from '@sanity/icons';
+import { UserIcon, RocketIcon, BillIcon, LaunchIcon } from '@sanity/icons';
 import { orderableDocumentListDeskItem } from '@sanity/orderable-document-list';
 
 export const myStructure: StructureResolver = (S, context) =>
@@ -33,15 +27,11 @@ export const myStructure: StructureResolver = (S, context) =>
         title: 'PROJECTS',
         icon: RocketIcon,
       }),
-      S.listItem()
-        .title('CONTACTS')
-        .icon(CaseIcon)
-        .icon(LaunchIcon)
-        .id('contacts')
-        .child(
-          S.editor()
-            .title('CONTACTS')
-            .schemaType('contacts')
-            .documentId('contacts')
-        ),
+      orderableDocumentListDeskItem({
+        type: 'contact',
+        S,
+        context,
+        title: 'CONTACTS',
+        icon: LaunchIcon,
+      }),
     ]);

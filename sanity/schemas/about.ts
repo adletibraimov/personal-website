@@ -1,4 +1,4 @@
-import { defineType, defineField } from 'sanity';
+import { defineType, defineField, defineArrayMember } from 'sanity';
 
 export default defineType({
   name: 'about',
@@ -6,13 +6,8 @@ export default defineType({
   type: 'document',
   fields: [
     defineField({
-      name: 'name',
-      title: 'Name',
-      type: 'string',
-    }),
-    defineField({
       name: 'image',
-      title: 'Image',
+      title: 'Portrait',
       type: 'image',
       options: {
         hotspot: true,
@@ -24,18 +19,56 @@ export default defineType({
           title: 'Alternative Text',
         },
       ],
+      validation: (Rule) => Rule.required(),
     }),
     defineField({
-      name: 'subtitle',
-      title: 'Subtitle',
-      type: 'array',
-      of: [{ type: 'block' }],
+      name: 'catchphrase',
+      title: 'Catchphrase',
+      type: 'string',
+      description: 'Appears after the portrait on scroll',
+      initialValue: 'Yep, this is me!',
+      validation: (Rule) => Rule.required(),
     }),
     defineField({
-      name: 'description',
-      title: 'Description',
+      name: 'beats',
+      title: 'Scroll beats',
       type: 'array',
-      of: [{ type: 'block' }],
+      description: 'Text blocks revealed one by one while scrolling',
+      of: [
+        defineArrayMember({
+          type: 'object',
+          name: 'beat',
+          title: 'Beat',
+          fields: [
+            defineField({
+              name: 'title',
+              title: 'Title',
+              type: 'string',
+              validation: (Rule) => Rule.required(),
+            }),
+            defineField({
+              name: 'description',
+              title: 'Description',
+              type: 'text',
+              rows: 3,
+              validation: (Rule) => Rule.required(),
+            }),
+          ],
+          preview: {
+            select: {
+              title: 'title',
+              subtitle: 'description',
+            },
+          },
+        }),
+      ],
+      validation: (Rule) => Rule.required().min(1),
     }),
   ],
+  preview: {
+    select: {
+      title: 'catchphrase',
+      media: 'image',
+    },
+  },
 });

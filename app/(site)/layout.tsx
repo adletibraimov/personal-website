@@ -3,7 +3,8 @@ import '../globals.css';
 import { GoogleAnalytics } from '@next/third-parties/google';
 
 import Header from '../../components/shared/Header';
-import Footer from '../../components/shared/Footer';
+import FluidCursor from '../../components/FluidCursor';
+import SmoothScroll from '../../components/SmoothScroll';
 import { Analytics } from '@vercel/analytics/next';
 import { Outfit } from 'next/font/google';
 
@@ -149,15 +150,17 @@ export default async function RootLayout({
       <body
         className={clsx(
           outfit.className,
-          'm-auto flex flex-col justify-between flex-grow h-screen'
+          'm-auto flex flex-col justify-between flex-grow min-h-screen'
         )}
       >
-        <div>
-          <Header />
-          <main>{children}</main>
-        </div>
-        <Footer />
-        <Analytics />
+        <SmoothScroll>
+          <div>
+            <Header />
+            <main>{children}</main>
+          </div>
+          <FluidCursor />
+          <Analytics />
+        </SmoothScroll>
       </body>
       <GoogleAnalytics gaId='G-VG95DB2TKE' />
     </html>
