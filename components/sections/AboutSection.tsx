@@ -14,7 +14,12 @@ export default function AboutSection({ data }: { data: About }) {
   const beats = data.beats ?? [];
   const identity = beats[0];
   const bioBeats = beats.slice(1);
-  const catchphrase = data.catchphrase || 'Yep, this is me!';
+  const catchphrase = 'yep, this is me:)';
+  const scalesNote =
+    'Fullstack — but I am more experienced in frontend';
+
+  // Extra scroll room for longer holds on identity / bio beats
+  const storyHeightVh = 500 + bioBeats.length * 190;
 
   useEffect(() => {
     const section = sectionRef.current;
@@ -27,6 +32,7 @@ export default function AboutSection({ data }: { data: About }) {
     const ctx = gsap.context(() => {
       const intro = section.querySelector<HTMLElement>('.about-intro');
       const story = section.querySelector<HTMLElement>('.about-story');
+      const hiEl = section.querySelector<HTMLElement>('.about-hi');
       const catchphraseEl =
         section.querySelector<HTMLElement>('.about-catchphrase');
       const portrait = section.querySelector<HTMLElement>('.about-portrait');
@@ -35,6 +41,8 @@ export default function AboutSection({ data }: { data: About }) {
       const identityEl =
         section.querySelector<HTMLElement>('.about-identity');
       const scalesEl = section.querySelector<HTMLElement>('.about-scales');
+      const scalesNoteEl =
+        section.querySelector<HTMLElement>('.about-scales-note');
       const backendEl = section.querySelector<HTMLElement>('.about-backend');
       const frontendEl =
         section.querySelector<HTMLElement>('.about-frontend');
@@ -45,7 +53,18 @@ export default function AboutSection({ data }: { data: About }) {
 
       if (prefersReducedMotion) {
         gsap.set(
-          [catchphraseEl, identityEl, scalesEl, backendEl, frontendEl, beamEl, fulcrumEl, ...bioEls],
+          [
+            hiEl,
+            catchphraseEl,
+            identityEl,
+            scalesEl,
+            scalesNoteEl,
+            backendEl,
+            frontendEl,
+            beamEl,
+            fulcrumEl,
+            ...bioEls,
+          ],
           { opacity: 1, x: 0, y: 0, scale: 1, rotate: 0, clearProps: 'all' }
         );
         return;
@@ -56,10 +75,12 @@ export default function AboutSection({ data }: { data: About }) {
       // Half-distance from center so labels sit left/right of the fulcrum
       const pairGap = isMobile ? 92 : 168;
 
-      gsap.set(catchphraseEl, { opacity: 0, x: isMobile ? 12 : 28 });
+      gsap.set(hiEl, { opacity: 0, y: isMobile ? -10 : -18 });
+      gsap.set(catchphraseEl, { opacity: 0, y: isMobile ? 10 : 18 });
       gsap.set(portrait, { scale: 0.96 });
       gsap.set(identityEl, { opacity: 0, y: 28 });
       gsap.set(scalesEl, { opacity: 0 });
+      gsap.set(scalesNoteEl, { opacity: 0, x: isMobile ? -18 : -36 });
       // Backend starts centered alone; later shifts left when Frontend joins
       gsap.set(backendEl, { opacity: 0, y: 20, x: 0 });
       gsap.set(frontendEl, {
@@ -69,9 +90,9 @@ export default function AboutSection({ data }: { data: About }) {
       });
       gsap.set(beamEl, { opacity: 0, scaleX: 0.35, rotate: 0 });
       gsap.set(fulcrumEl, { opacity: 0, y: 8 });
-      gsap.set(bioEls, { opacity: 0, y: 36 });
+      gsap.set(bioEls, { opacity: 0, x: isMobile ? -24 : -48 });
 
-      // 1) Sticky intro: photo + catchphrase, then exit upward
+      // 1) Sticky intro: Hi → catchphrase → hold → exit upward
       const introTl = gsap.timeline({
         scrollTrigger: {
           trigger: intro,
@@ -83,19 +104,22 @@ export default function AboutSection({ data }: { data: About }) {
 
       introTl
         .to(portrait, { scale: 1, duration: 1, ease: 'none' }, 0)
+        .to(hiEl, { opacity: 1, y: 0, duration: 0.85, ease: 'none' }, 0.85)
+        .to({}, { duration: 1.1 }, 1.7)
         .to(
           catchphraseEl,
-          { opacity: 1, x: 0, duration: 0.9, ease: 'none' },
-          1.1
+          { opacity: 1, y: 0, duration: 0.95, ease: 'none' },
+          2.8
         )
-        .to({}, { duration: 1.4 }, 2)
+        // Longer dwell with both labels visible
+        .to({}, { duration: 2.4 }, 3.75)
         .to(
           introCluster,
           { y: '-42vh', opacity: 0, duration: 1.6, ease: 'none' },
-          3.4
+          6.15
         );
 
-      // 2) Sticky black story: identity → Backend → Frontend → scales tilt
+      // 2) Sticky black story: identity → scales → note → bio beats
       const storyTl = gsap.timeline({
         scrollTrigger: {
           trigger: story,
@@ -112,84 +136,113 @@ export default function AboutSection({ data }: { data: About }) {
           { opacity: 1, y: 0, duration: 1.1, ease: 'none' },
           0.15
         )
-        .to({}, { duration: 1.5 }, 1.25)
+        // Longer hold on "I am Adlet Ibraimov"
+        .to({}, { duration: 3.2 }, 1.25)
         // Identity leaves
         .to(
           identityEl,
           { opacity: 0, y: -36, duration: 0.9, ease: 'none' },
-          2.75
+          4.45
         )
         // Scales stage in
-        .to(scalesEl, { opacity: 1, duration: 0.35, ease: 'none' }, 3.5)
+        .to(scalesEl, { opacity: 1, duration: 0.35, ease: 'none' }, 5.2)
         // Backend alone, centered
         .to(
           backendEl,
           { opacity: 1, y: 0, duration: 0.85, ease: 'none' },
-          3.65
+          5.35
         )
-        .to({}, { duration: 0.75 }, 4.5)
+        .to({}, { duration: 0.75 }, 6.2)
         // Frontend joins on the right; Backend shifts left into scale pose
         .to(
           backendEl,
           { x: -pairGap, duration: 0.9, ease: 'none' },
-          5.25
+          6.95
         )
         .to(
           frontendEl,
           { opacity: 1, y: 0, x: pairGap, duration: 0.9, ease: 'none' },
-          5.25
+          6.95
         )
-        .to({}, { duration: 0.55 }, 6.15)
+        .to({}, { duration: 0.55 }, 7.85)
         // Beam + fulcrum appear (scale under the words)
         .to(
           fulcrumEl,
           { opacity: 1, y: 0, duration: 0.5, ease: 'none' },
-          6.7
+          8.4
         )
         .to(
           beamEl,
           { opacity: 1, scaleX: 1, duration: 0.7, ease: 'none' },
-          6.8
+          8.5
         )
-        .to({}, { duration: 0.45 }, 7.5)
+        .to({}, { duration: 0.45 }, 9.2)
         // Tip the scale: Frontend heavier (down), Backend lighter (up)
         .to(
           backendEl,
           { y: isMobile ? -28 : -42, duration: 1.45, ease: 'none' },
-          7.95
+          9.65
         )
         .to(
           frontendEl,
           { y: isMobile ? 34 : 52, duration: 1.45, ease: 'none' },
-          7.95
+          9.65
         )
         .to(
           beamEl,
           { rotate: isMobile ? 11 : 14, duration: 1.45, ease: 'none' },
-          7.95
+          9.65
         )
-        .to({}, { duration: 2.1 }, 9.4);
+        .to({}, { duration: 1.4 }, 11.1)
+        // Caption under the scales
+        .to(
+          scalesNoteEl,
+          { opacity: 1, x: 0, duration: 1.1, ease: 'none' },
+          12.5
+        )
+        // Longer dwell with scales + note
+        .to({}, { duration: 2.6 }, 13.6);
 
-      // 3) Bio blocks: fade up as they enter
-      bioEls.forEach((el) => {
-        gsap.to(el, {
-          opacity: 1,
-          y: 0,
-          ease: 'none',
-          scrollTrigger: {
-            trigger: el,
-            start: 'top 82%',
-            end: 'top 48%',
-            scrub: 0.55,
-          },
-        });
+      let t = 16.2;
+
+      bioEls.forEach((el, i) => {
+        const isLast = i === bioEls.length - 1;
+        // Extra hold for bio beats (e.g. "open to contracts")
+        const hold = isLast ? 4.4 : 3.8;
+
+        if (i === 0) {
+          // Scales + note leave before first bio
+          storyTl.to(
+            scalesEl,
+            { opacity: 0, y: -28, duration: 0.85, ease: 'none' },
+            t
+          );
+          t += 0.8;
+        } else {
+          // Previous bio leaves
+          storyTl.to(
+            bioEls[i - 1],
+            { opacity: 0, x: isMobile ? 18 : 36, duration: 0.7, ease: 'none' },
+            t
+          );
+          t += 0.65;
+        }
+
+        storyTl.to(
+          el,
+          { opacity: 1, x: 0, duration: 1.05, ease: 'none' },
+          t
+        );
+        t += 1.05;
+        storyTl.to({}, { duration: hold }, t);
+        t += hold;
       });
 
       requestAnimationFrame(() => ScrollTrigger.refresh());
     }, section);
 
     return () => ctx.revert();
-  }, [data]);
+  }, [data, bioBeats.length]);
 
   const imageSrc = urlForImage(data.image)
     .fit('crop')
@@ -202,8 +255,7 @@ export default function AboutSection({ data }: { data: About }) {
     `${catchphrase} — Adlet Ibraimov, Frontend & Shopify Developer`;
 
   const identityTitle = identity?.title || 'I am Adlet Ibraimov';
-  const identitySubtitle =
-    identity?.description || 'Fullstack developer';
+  const identitySubtitle = 'Fullstack developer';
 
   return (
     <section
@@ -212,10 +264,14 @@ export default function AboutSection({ data }: { data: About }) {
       className='about-section relative z-10 bg-[#0a0a0a] text-white'
       aria-label='About me'
     >
-      {/* Sticky intro: photo + catchphrase, then exits upward */}
-      <div className='about-intro relative h-[280vh]'>
+      {/* Sticky intro: Hi → catchphrase, then exits upward */}
+      <div className='about-intro relative h-[360vh]'>
         <div className='sticky top-0 flex h-screen w-full items-center justify-center px-5'>
-          <div className='about-intro-cluster relative will-change-transform'>
+          <div className='about-intro-cluster relative flex flex-col items-center will-change-transform'>
+            <p className='about-hi z-20 mb-4 w-max text-center text-sm font-medium leading-snug tracking-tight text-white will-change-transform md:mb-5 md:text-base lg:text-lg'>
+              hi
+            </p>
+
             <div className='about-portrait relative z-10 aspect-[4/5] w-[min(52vw,240px)] will-change-transform md:w-[min(36vw,360px)]'>
               <div className='relative h-full w-full overflow-hidden'>
                 <Image
@@ -233,19 +289,22 @@ export default function AboutSection({ data }: { data: About }) {
               </div>
             </div>
 
-            <p className='about-catchphrase absolute left-[55%] top-1/2 z-20 w-max max-w-[7rem] -translate-y-1/2 text-left text-sm font-medium leading-snug tracking-tight text-white [text-shadow:0_1px_10px_rgba(0,0,0,0.55)] will-change-transform md:left-full md:ml-4 md:max-w-[12rem] md:text-base md:[text-shadow:none] lg:text-lg'>
+            <p className='about-catchphrase z-20 mt-4 w-max max-w-[12rem] text-center text-sm font-medium leading-snug tracking-tight text-white will-change-transform md:mt-5 md:max-w-[16rem] md:text-base lg:text-lg'>
               {catchphrase}
             </p>
           </div>
         </div>
       </div>
 
-      {/* Sticky black story: identity → Backend / Frontend scales */}
-      <div className='about-story relative h-[520vh] bg-[#0a0a0a]'>
+      {/* Sticky black story: identity → scales → note → bio */}
+      <div
+        className='about-story relative bg-[#0a0a0a]'
+        style={{ height: `${storyHeightVh}vh` }}
+      >
         <div className='sticky top-0 flex h-screen items-center justify-center overflow-hidden px-5 md:px-10'>
           <div className='relative flex h-full w-full max-w-5xl items-center justify-center'>
             <div className='about-identity absolute inset-x-0 flex flex-col items-center px-2 text-center will-change-transform'>
-              <h2 className='text-[clamp(1.75rem,6vw,4.5rem)] font-bold uppercase leading-[1.05] tracking-tight'>
+              <h2 className='text-[clamp(1.75rem,6vw,4.5rem)] font-bold uppercase leading-[1.05]'>
                 {identityTitle}
               </h2>
               <p className='mt-3 max-w-xl text-base tracking-wide text-white/65 md:mt-5 md:text-2xl lg:text-3xl'>
@@ -275,23 +334,20 @@ export default function AboutSection({ data }: { data: About }) {
                 </div>
               </div>
 
+              <p className='about-scales-note mt-6 max-w-xs px-2 text-center text-sm font-medium leading-snug tracking-wide text-white/60 will-change-transform md:mt-8 md:max-w-md md:text-base'>
+                {scalesNote}
+              </p>
+
               <p className='sr-only'>
                 Visual metaphor: Frontend weighs heavier than Backend,
                 showing stronger frontend expertise.
               </p>
             </div>
-          </div>
-        </div>
-      </div>
 
-      {/* Bio: large text about who I am */}
-      {bioBeats.length > 0 ? (
-        <div className='about-bio relative bg-[#0a0a0a] px-5 pb-28 pt-8 md:px-10 md:pb-40 lg:px-16'>
-          <div className='mx-auto flex w-full max-w-4xl flex-col gap-16 md:gap-24'>
             {bioBeats.map((beat) => (
               <div
                 key={beat._key}
-                className='about-bio-block will-change-transform'
+                className='about-bio-block absolute inset-x-0 mx-auto flex max-w-3xl flex-col items-start px-2 text-left will-change-transform'
               >
                 <h3 className='mb-4 text-[clamp(1.75rem,5vw,3.75rem)] font-bold uppercase leading-[1.05] tracking-tight text-white md:mb-6'>
                   {beat.title}
@@ -303,7 +359,7 @@ export default function AboutSection({ data }: { data: About }) {
             ))}
           </div>
         </div>
-      ) : null}
+      </div>
     </section>
   );
 }

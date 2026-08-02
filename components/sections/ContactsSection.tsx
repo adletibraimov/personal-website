@@ -8,7 +8,13 @@ function formatLinkLabel(value: string) {
   return value.replace(/^https?:\/\//, '').replace(/^mailto:/, '');
 }
 
-export default function ContactsSection({ data }: { data: Contact[] }) {
+export default function ContactsSection({
+  data,
+  resumeUrl,
+}: {
+  data: Contact[];
+  resumeUrl?: string;
+}) {
   const socials = data.filter(
     (item) => item.socialMedia !== 'email' && item.socialMedia !== 'phone'
   );
@@ -29,6 +35,16 @@ export default function ContactsSection({ data }: { data: Contact[] }) {
           <p className='text-base leading-relaxed text-primary md:text-lg'>
             Originally from Almaty, Kazakhstan
           </p>
+          {resumeUrl ? (
+            <a
+              href={resumeUrl}
+              target='_blank'
+              rel='noopener noreferrer'
+              className='mt-6 inline-block text-base text-primary transition-colors hover:text-secondary md:text-lg'
+            >
+              Download resume
+            </a>
+          ) : null}
         </div>
 
         <div className='flex flex-col gap-10 md:col-span-4'>

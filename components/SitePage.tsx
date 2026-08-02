@@ -120,7 +120,10 @@ export default function SitePage() {
           )}
 
           {data.contacts && data.contacts.length > 0 ? (
-            <ContactsSection data={data.contacts} />
+            <ContactsSection
+              data={data.contacts}
+              resumeUrl={data.cv?.[0]?.cvFileUrl}
+            />
           ) : (
             <section id='contacts' className='scroll-mt-24 bg-back px-3 py-24'>
               Contacts unavailable.
