@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { isInAppBrowser } from '@/lib/browser';
 import type { Project } from '@/types/project';
 
 gsap.registerPlugin(ScrollTrigger);
@@ -86,6 +87,8 @@ export default function ProjectsGrid({ projects }: ProjectsGridProps) {
     const prefersReducedMotion = window.matchMedia(
       '(prefers-reduced-motion: reduce)'
     ).matches;
+    // Instagram/Telegram WebViews: chrome height jumps mid-scroll
+    const inApp = isInAppBrowser();
 
     const settleFns: Array<() => void> = [];
 
@@ -117,16 +120,7 @@ export default function ProjectsGrid({ projects }: ProjectsGridProps) {
         gsap.set(mediaImg, { scaleX: 1.25, transformOrigin: '50% 50%' });
         gsap.set(reels, { y: 0 });
 
-        const tl = gsap.timeline({
-          scrollTrigger: {
-            trigger,
-            start: 'top 80%',
-            end: 'bottom 20%',
-            toggleActions: 'play reverse play reverse',
-            fastScrollEnd: true,
-            preventOverlaps: true,
-          },
-        });
+        const tl = gsap.timeline({ paused: true });
 
         tl.to(
           media,
@@ -148,6 +142,27 @@ export default function ProjectsGrid({ projects }: ProjectsGridProps) {
             },
             0.08
           );
+
+        // Keep final state while any of the card is on-screen.
+        // Instant reset only fully off-screen (avoids visible shrink + "AR8…" reel).
+        const resetOffscreen = () => {
+          tl.pause(0);
+        };
+
+        ScrollTrigger.create({
+          trigger,
+          start: 'top 80%',
+          onEnter: () => tl.play(),
+          onEnterBack: () => tl.play(),
+        });
+
+        ScrollTrigger.create({
+          trigger,
+          start: 'top bottom',
+          end: 'bottom top',
+          onLeave: resetOffscreen, // fully above viewport
+          onLeaveBack: resetOffscreen, // fully below viewport
+        });
       });
 
       if (prefersReducedMotion || bendEls.length === 0) return;
@@ -165,7 +180,10 @@ export default function ProjectsGrid({ projects }: ProjectsGridProps) {
 
       // Snappy follow — old 0.4s ease never reached full lean before settle
       const rotationZTo = bendEls.map((el) =>
-        gsap.quickTo(el, 'rotationZ', { duration: 0.12, ease: 'power2.out' })
+        gsap.quickTo(el, 'rotationZ', {
+          duration: inApp ? 0.18 : 0.12,
+          ease: 'power2.out',
+        })
       );
 
       const flatten = () => {
@@ -182,8 +200,20 @@ export default function ProjectsGrid({ projects }: ProjectsGridProps) {
         return Math.sign(offset) * Math.pow(t, 0.65);
       };
 
+      // Freeze vh in WebViews — live innerHeight jumps with chrome show/hide
+      let stableVh = window.innerHeight;
+      const syncStableVh = () => {
+        stableVh = window.innerHeight;
+      };
+      if (inApp) {
+        window.addEventListener('orientationchange', syncStableVh);
+        settleFns.push(() =>
+          window.removeEventListener('orientationchange', syncStableVh)
+        );
+      }
+
       const applyBend = (strength: number) => {
-        const vh = window.innerHeight;
+        const vh = inApp ? stableVh : window.innerHeight;
         const s = gsap.utils.clamp(0, 1, strength);
 
         if (s < 0.02) {
@@ -223,6 +253,9 @@ export default function ProjectsGrid({ projects }: ProjectsGridProps) {
         lastY = y;
         lastTs = now;
 
+        // Ignore micro jumps from WebView chrome resize (not real scroll)
+        if (inApp && delta < 1) return;
+
         const pxPerSec = (delta / dt) * 1000;
         const fromSpeed = pxPerSec / VELOCITY_REF;
         // Floor strength so bend is always obvious while scrolling
@@ -230,7 +263,7 @@ export default function ProjectsGrid({ projects }: ProjectsGridProps) {
         applyBend(strength);
 
         clearTimeout(settleTimer);
-        settleTimer = setTimeout(flatten, SETTLE_MS);
+        settleTimer = setTimeout(flatten, inApp ? 280 : SETTLE_MS);
       };
 
       // Native scroll is more reliable than ST onUpdate for trackpads
