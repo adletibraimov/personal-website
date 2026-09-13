@@ -1,4 +1,4 @@
-/** In-app WebViews with unstable chrome / viewport (Instagram, Telegram, LinkedIn, Facebook). */
+/** In-app WebViews with unstable chrome / viewport. */
 export function isInAppBrowser(
   ua = typeof navigator !== 'undefined' ? navigator.userAgent : ''
 ) {
@@ -7,17 +7,13 @@ export function isInAppBrowser(
     u.includes('instagram') ||
     u.includes('telegram') ||
     u.includes('linkedin') ||
+    u.includes('threads') ||
+    u.includes('barcelona') ||
     u.includes('fbav') ||
     u.includes('fban') ||
     u.includes('fb_iab') ||
     u.includes('iabmv')
   );
-}
-
-/** Visible viewport — visualViewport is accurate in in-app chrome; innerHeight is not. */
-export function getViewportHeight() {
-  if (typeof window === 'undefined') return 0;
-  return window.visualViewport?.height || window.innerHeight;
 }
 
 export function getScrollY() {
@@ -28,4 +24,31 @@ export function getScrollY() {
     document.body.scrollTop ||
     0
   );
+}
+
+function readViewportHeight() {
+  return window.innerHeight || window.visualViewport?.height || 0;
+}
+
+/** First-paint viewport. Never follows address-bar / in-app chrome toggles. */
+let frozenVh = 0;
+
+export function getFrozenViewportHeight() {
+  if (!frozenVh && typeof window !== 'undefined') {
+    frozenVh = readViewportHeight();
+  }
+  return frozenVh;
+}
+
+export function applyFrozenViewportCss() {
+  const h = getFrozenViewportHeight();
+  if (!h) return;
+  document.documentElement.style.setProperty('--app-vh', `${h * 0.01}px`);
+}
+
+/** Orientation change only — chrome show/hide must not update this. */
+export function refreezeViewportHeight() {
+  frozenVh = readViewportHeight();
+  applyFrozenViewportCss();
+  return frozenVh;
 }

@@ -23,28 +23,25 @@ html {
 }
 
 /*
-  In-app / mobile chrome toggles 100vh. svh is the small (chrome-visible)
-  viewport and stays stable while the address bar or WebView UI shows/hides.
-  vh is the fallback for older engines.
+  --app-vh is frozen in JS on first paint (and orientation change only).
+  Do not use live vh/dvh here — in-app chrome toggles those mid-scroll.
 */
 .min-h-stable-screen {
-  min-height: 100vh;
   min-height: 100svh;
+  min-height: calc(var(--app-vh, 1vh) * 100);
 }
 
 .h-stable-screen {
-  height: 100vh;
   height: 100svh;
+  height: calc(var(--app-vh, 1vh) * 100);
 }
 
 .about-intro {
-  height: 360vh;
-  height: 360svh;
+  height: calc(var(--app-vh, 1vh) * 360);
 }
 
 .about-story {
-  height: calc(var(--about-story-vh, 500) * 1vh);
-  height: calc(var(--about-story-vh, 500) * 1svh);
+  height: calc(var(--app-vh, 1vh) * var(--about-story-vh, 500));
 }
 
 body {

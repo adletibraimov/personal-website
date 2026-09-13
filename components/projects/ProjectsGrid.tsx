@@ -5,8 +5,11 @@ import Image from 'next/image';
 import Link from 'next/link';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { getScrollY, getViewportHeight, isInAppBrowser } from '@/lib/browser';
-import { scheduleScrollTriggerRefresh } from '@/lib/scroll-trigger';
+import {
+  getFrozenViewportHeight,
+  getScrollY,
+  isInAppBrowser,
+} from '@/lib/browser';
 import type { Project } from '@/types/project';
 
 gsap.registerPlugin(ScrollTrigger);
@@ -85,6 +88,8 @@ export default function ProjectsGrid({ projects }: ProjectsGridProps) {
     const container = containerRef.current;
     if (!container) return;
 
+    container.style.minHeight = `${getFrozenViewportHeight()}px`;
+
     const prefersReducedMotion = window.matchMedia(
       '(prefers-reduced-motion: reduce)'
     ).matches;
@@ -150,34 +155,22 @@ export default function ProjectsGrid({ projects }: ProjectsGridProps) {
           tl.pause(0);
         };
 
-        const syncFromViewport = () => {
-          const rect = trigger.getBoundingClientRect();
-          const vh = getViewportHeight();
-          if (rect.bottom < 0 || rect.top > vh) {
-            resetOffscreen();
-            return;
-          }
-          if (rect.top < vh * 0.8) tl.play();
-        };
-
-        // Function getters re-read viewport on refresh (Lenis + native / in-app).
-        // onRefresh covers hash jumps / Lenis.scrollTo that skip onEnter.
+        // Static start/end — cached once. Live getters + invalidateOnRefresh
+        // re-measure when in-app chrome toggles innerHeight (even if
+        // ignoreMobileResize is set and something else calls refresh).
         ScrollTrigger.create({
           trigger,
-          start: () => `top ${getViewportHeight() * 0.8}px`,
-          invalidateOnRefresh: true,
+          start: 'top 80%',
           onEnter: () => tl.play(),
           onEnterBack: () => tl.play(),
-          onRefresh: syncFromViewport,
         });
 
         ScrollTrigger.create({
           trigger,
-          start: () => 'top bottom',
-          end: () => 'bottom top',
-          invalidateOnRefresh: true,
-          onLeave: resetOffscreen, // fully above viewport
-          onLeaveBack: resetOffscreen, // fully below viewport
+          start: 'top bottom',
+          end: 'bottom top',
+          onLeave: resetOffscreen,
+          onLeaveBack: resetOffscreen,
         });
       });
 
@@ -216,20 +209,11 @@ export default function ProjectsGrid({ projects }: ProjectsGridProps) {
         return Math.sign(offset) * Math.pow(t, 0.65);
       };
 
-      // Freeze vh in WebViews — live innerHeight jumps with chrome show/hide
-      let stableVh = getViewportHeight();
-      const syncStableVh = () => {
-        stableVh = getViewportHeight();
-      };
-      if (inApp) {
-        window.addEventListener('orientationchange', syncStableVh);
-        settleFns.push(() =>
-          window.removeEventListener('orientationchange', syncStableVh)
-        );
-      }
+      // Frozen first-paint height — chrome show/hide must not move zones
+      const stableVh = getFrozenViewportHeight();
 
       const applyBend = (strength: number) => {
-        const vh = inApp ? stableVh : getViewportHeight();
+        const vh = stableVh;
         const s = gsap.utils.clamp(0, 1, strength);
 
         if (s < 0.02) {
@@ -297,10 +281,7 @@ export default function ProjectsGrid({ projects }: ProjectsGridProps) {
       });
     }, container);
 
-    const cancelRefresh = scheduleScrollTriggerRefresh(container);
-
     return () => {
-      cancelRefresh();
       settleFns.forEach((fn) => fn());
       ctx.revert();
     };

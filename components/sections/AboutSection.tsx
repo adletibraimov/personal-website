@@ -4,7 +4,6 @@ import { useEffect, useRef, type CSSProperties } from 'react';
 import Image from 'next/image';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { scheduleScrollTriggerRefresh } from '@/lib/scroll-trigger';
 import { urlForImage } from '@/sanity/lib/image';
 import type { About } from '@/types/about';
 
@@ -97,10 +96,9 @@ export default function AboutSection({ data }: { data: About }) {
       const introTl = gsap.timeline({
         scrollTrigger: {
           trigger: intro,
-          start: () => 'top top',
-          end: () => 'bottom top',
+          start: 'top top',
+          end: 'bottom top',
           scrub: 0.65,
-          invalidateOnRefresh: true,
         },
       });
 
@@ -125,10 +123,9 @@ export default function AboutSection({ data }: { data: About }) {
       const storyTl = gsap.timeline({
         scrollTrigger: {
           trigger: story,
-          start: () => 'top top',
-          end: () => 'bottom top',
+          start: 'top top',
+          end: 'bottom top',
           scrub: 0.7,
-          invalidateOnRefresh: true,
         },
       });
 
@@ -243,14 +240,7 @@ export default function AboutSection({ data }: { data: About }) {
 
     }, section);
 
-    const cancelRefresh = prefersReducedMotion
-      ? () => {}
-      : scheduleScrollTriggerRefresh(section);
-
-    return () => {
-      cancelRefresh();
-      ctx.revert();
-    };
+    return () => ctx.revert();
   }, [data, bioBeats.length]);
 
   const imageSrc = urlForImage(data.image)

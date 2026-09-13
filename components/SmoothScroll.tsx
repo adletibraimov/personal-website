@@ -11,13 +11,14 @@ import Lenis from 'lenis';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { isInAppBrowser } from '@/lib/browser';
-import { scheduleScrollTriggerRefresh } from '@/lib/scroll-trigger';
+import {
+  bindStableScrollTriggerRefresh,
+  configureScrollTrigger,
+} from '@/lib/scroll-trigger';
 import 'lenis/dist/lenis.css';
 
 gsap.registerPlugin(ScrollTrigger);
-
-// Prevent ST refresh when mobile/in-app chrome toggles — avoids janky play/reverse
-ScrollTrigger.config({ ignoreMobileResize: true });
+configureScrollTrigger();
 
 const LenisContext = createContext<Lenis | null>(null);
 
@@ -32,9 +33,12 @@ export default function SmoothScroll({ children }: { children: ReactNode }) {
     const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
     if (mq.matches) return;
 
-    // Lenis + Instagram/Telegram/LinkedIn WebViews fight over scroll — use native
+    configureScrollTrigger();
+    const unbindRefresh = bindStableScrollTriggerRefresh();
+
+    // Lenis + in-app WebViews fight over scroll — use native
     if (isInAppBrowser()) {
-      return scheduleScrollTriggerRefresh();
+      return unbindRefresh;
     }
 
     const instance = new Lenis({
@@ -53,10 +57,8 @@ export default function SmoothScroll({ children }: { children: ReactNode }) {
     gsap.ticker.lagSmoothing(0);
     setLenis(instance);
 
-    const cancelRefresh = scheduleScrollTriggerRefresh();
-
     return () => {
-      cancelRefresh();
+      unbindRefresh();
       instance.off('scroll', ScrollTrigger.update);
       gsap.ticker.remove(onTick);
       instance.destroy();
