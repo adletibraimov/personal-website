@@ -22,6 +22,31 @@ html {
   scroll-behavior: auto;
 }
 
+/*
+  In-app / mobile chrome toggles 100vh. svh is the small (chrome-visible)
+  viewport and stays stable while the address bar or WebView UI shows/hides.
+  vh is the fallback for older engines.
+*/
+.min-h-stable-screen {
+  min-height: 100vh;
+  min-height: 100svh;
+}
+
+.h-stable-screen {
+  height: 100vh;
+  height: 100svh;
+}
+
+.about-intro {
+  height: 360vh;
+  height: 360svh;
+}
+
+.about-story {
+  height: calc(var(--about-story-vh, 500) * 1vh);
+  height: calc(var(--about-story-vh, 500) * 1svh);
+}
+
 body {
   background-color: #0a0a0a;
   @apply text-primary;

@@ -11,6 +11,7 @@ import Lenis from 'lenis';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { isInAppBrowser } from '@/lib/browser';
+import { scheduleScrollTriggerRefresh } from '@/lib/scroll-trigger';
 import 'lenis/dist/lenis.css';
 
 gsap.registerPlugin(ScrollTrigger);
@@ -31,10 +32,9 @@ export default function SmoothScroll({ children }: { children: ReactNode }) {
     const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
     if (mq.matches) return;
 
-    // Lenis + Instagram/Telegram WebViews fight over scroll & resize — use native
+    // Lenis + Instagram/Telegram/LinkedIn WebViews fight over scroll — use native
     if (isInAppBrowser()) {
-      requestAnimationFrame(() => ScrollTrigger.refresh());
-      return;
+      return scheduleScrollTriggerRefresh();
     }
 
     const instance = new Lenis({
@@ -53,10 +53,10 @@ export default function SmoothScroll({ children }: { children: ReactNode }) {
     gsap.ticker.lagSmoothing(0);
     setLenis(instance);
 
-    // Sticky + ScrollTrigger need a refresh after Lenis takes over scrolling
-    requestAnimationFrame(() => ScrollTrigger.refresh());
+    const cancelRefresh = scheduleScrollTriggerRefresh();
 
     return () => {
+      cancelRefresh();
       instance.off('scroll', ScrollTrigger.update);
       gsap.ticker.remove(onTick);
       instance.destroy();

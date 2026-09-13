@@ -5,7 +5,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { isInAppBrowser } from '@/lib/browser';
+import { getScrollY, getViewportHeight, isInAppBrowser } from '@/lib/browser';
+import { scheduleScrollTriggerRefresh } from '@/lib/scroll-trigger';
 import type { Project } from '@/types/project';
 
 gsap.registerPlugin(ScrollTrigger);
@@ -149,17 +150,32 @@ export default function ProjectsGrid({ projects }: ProjectsGridProps) {
           tl.pause(0);
         };
 
+        const syncFromViewport = () => {
+          const rect = trigger.getBoundingClientRect();
+          const vh = getViewportHeight();
+          if (rect.bottom < 0 || rect.top > vh) {
+            resetOffscreen();
+            return;
+          }
+          if (rect.top < vh * 0.8) tl.play();
+        };
+
+        // Function getters re-read viewport on refresh (Lenis + native / in-app).
+        // onRefresh covers hash jumps / Lenis.scrollTo that skip onEnter.
         ScrollTrigger.create({
           trigger,
-          start: 'top 80%',
+          start: () => `top ${getViewportHeight() * 0.8}px`,
+          invalidateOnRefresh: true,
           onEnter: () => tl.play(),
           onEnterBack: () => tl.play(),
+          onRefresh: syncFromViewport,
         });
 
         ScrollTrigger.create({
           trigger,
-          start: 'top bottom',
-          end: 'bottom top',
+          start: () => 'top bottom',
+          end: () => 'bottom top',
+          invalidateOnRefresh: true,
           onLeave: resetOffscreen, // fully above viewport
           onLeaveBack: resetOffscreen, // fully below viewport
         });
@@ -201,9 +217,9 @@ export default function ProjectsGrid({ projects }: ProjectsGridProps) {
       };
 
       // Freeze vh in WebViews — live innerHeight jumps with chrome show/hide
-      let stableVh = window.innerHeight;
+      let stableVh = getViewportHeight();
       const syncStableVh = () => {
-        stableVh = window.innerHeight;
+        stableVh = getViewportHeight();
       };
       if (inApp) {
         window.addEventListener('orientationchange', syncStableVh);
@@ -213,7 +229,7 @@ export default function ProjectsGrid({ projects }: ProjectsGridProps) {
       }
 
       const applyBend = (strength: number) => {
-        const vh = inApp ? stableVh : window.innerHeight;
+        const vh = inApp ? stableVh : getViewportHeight();
         const s = gsap.utils.clamp(0, 1, strength);
 
         if (s < 0.02) {
@@ -241,14 +257,14 @@ export default function ProjectsGrid({ projects }: ProjectsGridProps) {
         });
       };
 
-      let lastY = window.scrollY;
+      let lastY = getScrollY();
       let lastTs = performance.now();
       let settleTimer: ReturnType<typeof setTimeout> | undefined;
 
       const onScroll = () => {
         const now = performance.now();
         const dt = Math.max(now - lastTs, 1);
-        const y = window.scrollY;
+        const y = getScrollY();
         const delta = Math.abs(y - lastY);
         lastY = y;
         lastTs = now;
@@ -281,7 +297,10 @@ export default function ProjectsGrid({ projects }: ProjectsGridProps) {
       });
     }, container);
 
+    const cancelRefresh = scheduleScrollTriggerRefresh(container);
+
     return () => {
+      cancelRefresh();
       settleFns.forEach((fn) => fn());
       ctx.revert();
     };
@@ -291,7 +310,7 @@ export default function ProjectsGrid({ projects }: ProjectsGridProps) {
     <section
       id='projects'
       ref={containerRef}
-      className='scroll-mt-24 min-h-screen bg-back px-3 py-24'
+      className='scroll-mt-24 min-h-stable-screen bg-back px-3 py-24'
     >
       <div className='flex flex-col'>
         <h2 className='font-bold mb-2 text-5xl md:text-7xl'>PROJECTS</h2>

@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, type CSSProperties } from 'react';
 import Image from 'next/image';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { scheduleScrollTriggerRefresh } from '@/lib/scroll-trigger';
 import { urlForImage } from '@/sanity/lib/image';
 import type { About } from '@/types/about';
 
@@ -96,9 +97,10 @@ export default function AboutSection({ data }: { data: About }) {
       const introTl = gsap.timeline({
         scrollTrigger: {
           trigger: intro,
-          start: 'top top',
-          end: 'bottom top',
+          start: () => 'top top',
+          end: () => 'bottom top',
           scrub: 0.65,
+          invalidateOnRefresh: true,
         },
       });
 
@@ -123,9 +125,10 @@ export default function AboutSection({ data }: { data: About }) {
       const storyTl = gsap.timeline({
         scrollTrigger: {
           trigger: story,
-          start: 'top top',
-          end: 'bottom top',
+          start: () => 'top top',
+          end: () => 'bottom top',
           scrub: 0.7,
+          invalidateOnRefresh: true,
         },
       });
 
@@ -238,10 +241,16 @@ export default function AboutSection({ data }: { data: About }) {
         t += hold;
       });
 
-      requestAnimationFrame(() => ScrollTrigger.refresh());
     }, section);
 
-    return () => ctx.revert();
+    const cancelRefresh = prefersReducedMotion
+      ? () => {}
+      : scheduleScrollTriggerRefresh(section);
+
+    return () => {
+      cancelRefresh();
+      ctx.revert();
+    };
   }, [data, bioBeats.length]);
 
   const imageSrc = urlForImage(data.image)
@@ -265,8 +274,8 @@ export default function AboutSection({ data }: { data: About }) {
       aria-label='About me'
     >
       {/* Sticky intro: Hi → catchphrase, then exits upward */}
-      <div className='about-intro relative h-[360vh]'>
-        <div className='sticky top-0 flex h-screen w-full items-center justify-center px-5'>
+      <div className='about-intro relative'>
+        <div className='about-sticky-view h-stable-screen sticky top-0 flex w-full items-center justify-center px-5'>
           <div className='about-intro-cluster relative flex flex-col items-center will-change-transform'>
             <p className='about-hi z-20 mb-4 w-max text-center text-sm font-medium leading-snug tracking-tight text-white will-change-transform md:mb-5 md:text-base lg:text-lg'>
               hi
@@ -299,9 +308,9 @@ export default function AboutSection({ data }: { data: About }) {
       {/* Sticky black story: identity → scales → note → bio */}
       <div
         className='about-story relative bg-[#0a0a0a]'
-        style={{ height: `${storyHeightVh}vh` }}
+        style={{ '--about-story-vh': storyHeightVh } as CSSProperties}
       >
-        <div className='sticky top-0 flex h-screen items-center justify-center overflow-hidden px-5 md:px-10'>
+        <div className='about-sticky-view h-stable-screen sticky top-0 flex items-center justify-center overflow-hidden px-5 md:px-10'>
           <div className='relative flex h-full w-full max-w-5xl items-center justify-center'>
             <div className='about-identity absolute inset-x-0 flex flex-col items-center px-2 text-center will-change-transform'>
               <h2 className='text-[clamp(1.75rem,6vw,4.5rem)] font-bold uppercase leading-[1.05]'>

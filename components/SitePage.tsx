@@ -15,6 +15,7 @@ import type { Contact } from '@/types/contact';
 import AboutSection from '@/components/sections/AboutSection';
 import ContactsSection from '@/components/sections/ContactsSection';
 import ProjectsGrid from '@/components/projects/ProjectsGrid';
+import { scheduleScrollTriggerRefresh } from '@/lib/scroll-trigger';
 
 type SiteData = {
   about: About | null;
@@ -55,6 +56,11 @@ export default function SitePage() {
 
     return () => cancelAnimationFrame(frame);
   }, [data]);
+
+  useEffect(() => {
+    if (!data || !revealed) return;
+    return scheduleScrollTriggerRefresh();
+  }, [data, revealed]);
 
   useEffect(() => {
     if (!data || !revealed) return;
