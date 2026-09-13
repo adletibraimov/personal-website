@@ -108,9 +108,9 @@ export default function ContactsSection({
 
       <div className='mt-20 flex flex-col gap-3 border-t border-primary/10 pt-6 text-sm text-primary/55 md:mt-28 md:flex-row md:items-center md:justify-between'>
         <p>
-          ©{year} {config.author}
+          © {year} {config.author}
         </p>
-        <p>Built by {config.author}</p>
+        <p>Available for new projects</p>
       </div>
     </section>
   );
